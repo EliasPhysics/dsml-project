@@ -1,0 +1,5 @@
+name: dsml-project
+channels:
+  - defaults
+dependencies:
+  - python

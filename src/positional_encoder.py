@@ -14,14 +14,13 @@ class PositionalEncoder(nn.Module):
         """
         Parameters:
             max_seq_len: the maximum length of the input sequences. This is necessary for positional encoding
-            d_model: The dimension of the data dimensoin
-                     (Vaswani et al, 2017)
+            d_model: The dimension of the input layer output
         """
         # initialize the torch nn.Module
         super().__init__()
 
         # save parameters to class
-        self.latent_dim = data_dim
+        self.data_dim = data_dim
         self.dropout = nn.Dropout(p=dropout)
 
         # create array for positional encoding
@@ -41,8 +40,9 @@ class PositionalEncoder(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         """
         Args:
-            x: Tensor, shape [batch_size, enc_seq_len, dim_val] or
-               [enc_seq_len, batch_size, dim_val]
+            x: Tensor, shape [batch_size, enc_seq_len, dim_val]
+
+        returns: Tensor, shape [batch_size,enc_seq_len, dim_val]
         """
         x = x + self.pe[:, :x.size(1)]
 
