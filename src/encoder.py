@@ -54,20 +54,20 @@ class Encoder(nn.Module):
 
 
 
-    def forward(self, input: Tensor) -> Tensor:
+    def forward(self, src: Tensor) -> Tensor:
         """
         Returns a tensor of shape:
 
         [ batch_size, target_sequence_length, ?]
         """
         # Pass through the input layer right before the encoder
-        input = self.encoder_input_layer(input)
+        src = self.encoder_input_layer(src)
 
         # Pass through the positional encoding layer
-        pos_encoded_input = self.positional_encoding_layer(input)
+        pos_encoded_src = self.positional_encoding_layer(src)
 
         encoder_output = self.encoder(
-            src=pos_encoded_input
+            src=pos_encoded_src
             )
 
         return encoder_output

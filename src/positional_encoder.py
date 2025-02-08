@@ -9,7 +9,7 @@ class PositionalEncoder(nn.Module):
     This class encodes the position to the input sequence.
     """
 
-    def __init__(self, max_seq_len: int = 5000, data_dim: int = 512, dropout: float = 0.2):
+    def __init__(self, max_seq_len: int = 5000, d_model: int = 512, dropout: float = 0.2):
 
         """
         Parameters:
@@ -20,16 +20,16 @@ class PositionalEncoder(nn.Module):
         super().__init__()
 
         # save parameters to class
-        self.data_dim = data_dim
+        self.d_model = d_model
         self.dropout = nn.Dropout(p=dropout)
 
         # create array for positional encoding
         position_counter = torch.arange(max_seq_len).unsqueeze(1)
         # taken from the positional encoding torch tutorial
-        div_term = torch.exp(torch.arange(0, data_dim, 2) * (-math.log(10000.0) / data_dim))
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
 
         # create positional encoding shift to add to the sequential data
-        pos_encoding = torch.zeros(1, max_seq_len, data_dim)
+        pos_encoding = torch.zeros(1, max_seq_len, d_model)
         pos_encoding[0, :, 0::2] = torch.sin(position_counter * div_term)
         pos_encoding[0, :, 1::2] = torch.cos(position_counter * div_term)
 
