@@ -29,12 +29,12 @@ class PositionalEncoder(nn.Module):
         div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
 
         # create positional encoding shift to add to the sequential data
-        pos_encoding = torch.zeros(1, max_seq_len, d_model)
-        pos_encoding[0, :, 0::2] = torch.sin(position_counter * div_term)
-        pos_encoding[0, :, 1::2] = torch.cos(position_counter * div_term)
+        self.pos_encoding = torch.zeros(1, max_seq_len, d_model)
+        self.pos_encoding[0, :, 0::2] = torch.sin(position_counter * div_term)
+        self.pos_encoding[0, :, 1::2] = torch.cos(position_counter * div_term)
 
         # this makes torch register the positional encoding as non-trainable parameter
-        self.register_buffer('pe', pos_encoding)
+        self.register_buffer('pe', self.pos_encoding)
 
 
     def forward(self, x: Tensor) -> Tensor:
@@ -44,6 +44,6 @@ class PositionalEncoder(nn.Module):
 
         returns: Tensor, shape [batch_size,enc_seq_len, dim_val]
         """
-        x = x + self.pe[:, :x.size(1)]
+        x = x + self.pos_encoding[:, :x.size(1)]
 
         return self.dropout(x)
