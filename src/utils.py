@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import torch
+from torch import Tensor
 
 def generate_square_subsequent_mask(dim1: int, dim2: int):
     """
@@ -74,13 +75,12 @@ def get_indices_entire_sequence(data: pd.DataFrame, window_size: int, step_size:
     return list_indices
 
 
-def read_data(data_dir):
+def read_data(data_dir:str) -> Tensor:
 
     array = np.load(data_dir)
-    print(array)
-    print(array.shape)
+    print(f"Training data shape: {array.shape}")
 
-    return array
+    return torch.from_numpy(array)
 
 
 
