@@ -18,7 +18,7 @@ class TimeSeriesTransformer(nn.Module):
                  dropout_decoder: float = 0.2,
                  n_heads: int = 8,
                  dim_feedforward_decoder: int = 2048,
-                 num_predicted_features: int = 1
+                 num_predicted_features: int = 3
                  ):
         super().__init__()
 

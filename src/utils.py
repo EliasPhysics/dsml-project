@@ -45,8 +45,8 @@ def get_indices_input_target(num_obs, input_len, step_size, forecast_horizon, ta
     tgt_start_index = subseq_stop_index + forecast_horizon
     tgt_stop_index = tgt_start_index + target_len
 
-    print("target_last_idx is {}".format(tgt_start_index))
-    print("stop_position is {}".format(stop_position))
+    #print("target_last_idx is {}".format(tgt_start_index))
+    #print("stop_position is {}".format(stop_position))
     indices = []
     while tgt_stop_index <= stop_position:
         indices.append((subseq_start_index, subseq_stop_index, tgt_start_index,  tgt_stop_index))

@@ -44,6 +44,7 @@ class Encoder(nn.Module):
             nhead = nhead,
             dim_feedforward=dim_feedforward_encoder,
             dropout=dropout_encoder,
+            batch_first=True
         )
 
         # stack encoder layers to obtain Encoder
@@ -66,6 +67,7 @@ class Encoder(nn.Module):
         src = self.encoder_input_layer(src)
 
         # Pass through the positional encoding layer
+        #src = src.unsqueeze(0)
         pos_encoded_src = self.positional_encoding_layer(src)
 
         encoder_output = self.encoder(

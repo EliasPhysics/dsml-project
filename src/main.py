@@ -5,6 +5,8 @@ import utils
 from model import TimeSeriesTransformer
 import os
 
+device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+
 
 # Training parameters
 epochs = 10
@@ -12,13 +14,12 @@ forecast_window = 10
 enc_seq_len = 20
 dec_seq_len = 20
 input_len = 40
-d_model = 512
-step_size = 5
+d_model = 128
+step_size = 100
 forecast_horizon = 5
 target_len = 20
 n_enc_layers = 2
 n_dec_layers = 2
-
 
 # initialize data
 os.chdir("..")
@@ -63,22 +64,24 @@ for epoch in range(epochs):
 
         # Generate masks
         tgt_mask = utils.generate_square_subsequent_mask(
-            dim1=forecast_window,
-            dim2=forecast_window
+            dim1=target_len,
+            dim2=target_len
         )
 
         src_mask = utils.generate_square_subsequent_mask(
-            dim1=forecast_window,
-            dim2=enc_seq_len
+            dim1=target_len,
+            dim2=target_len
         )
 
         # Make forecasts
+        #print(f"src: {src.shape}, tgt: {tgt.shape}")
         prediction = model(src, tgt, src_mask, tgt_mask)
 
         # Compute and backprop loss
         loss = criterion(tgt_y, prediction)
 
         loss.backward()
+        #print(loss)
 
         # Take optimizer step
         optimizer.step()
@@ -86,14 +89,27 @@ for epoch in range(epochs):
     # Iterate over all (x,y) pairs in validation dataloader
     model.eval()
 
+    data_validation = utils.read_data("data/lorenz63_on0.05_train.npy")
+    indices_validation = utils.get_indices_input_target(num_obs=data_validation.shape[0],
+                                             input_len=input_len,
+                                             step_size=step_size,
+                                             forecast_horizon=forecast_horizon,
+                                             target_len=target_len)
+    validation_datamanager = TransformerDataset(data=data_validation,
+                                     indices=indices,
+                                     enc_seq_len=enc_seq_len,
+                                     dec_seq_len=dec_seq_len,
+                                     target_seq_len=target_len)
+
     with torch.no_grad():
 
-        for i, (src, _, tgt_y) in enumerate(validation_dataloader):
-            prediction = inference.run_encoder_decoder_inference(
+        for i, (src, _, tgt_y) in enumerate(validation_datamanager):
+            prediction = training.run_encoder_decoder_inference(
                 model=model,
                 src=src,
                 forecast_window=forecast_window,
-                batch_size=src.shape[1]
+                batch_size=src.shape[0],
+                device=device
             )
 
             loss = criterion(tgt_y, prediction)

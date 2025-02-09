@@ -13,7 +13,7 @@ class Decoder(nn.Module):
                  dropout_decoder:float=0.2,
                  n_heads:int=8,
                  dim_feedforward_decoder:int=2048,
-                 num_predicted_features: int=1):
+                 num_predicted_features: int=3):
 
         """
         Parameters:
@@ -26,7 +26,7 @@ class Decoder(nn.Module):
 
         self.decoder_input_layer = nn.Linear(
             in_features=num_predicted_features,
-            out_features=d_model
+            out_features=d_model,
         )
 
         # create one decoder layer
@@ -45,7 +45,13 @@ class Decoder(nn.Module):
             norm=None
         )
 
+        self.linear_mapping = nn.Linear(
+            in_features=d_model,
+            out_features=num_predicted_features
+        )
+
     def forward(self, tgt: Tensor, src: Tensor, tgt_mask: Tensor=None, src_mask: Tensor=None) -> Tensor:
+
         tgt = self.decoder_input_layer(tgt)
 
         decoder_output = self.decoder(

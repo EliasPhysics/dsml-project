@@ -15,7 +15,7 @@ def run_encoder_decoder_inference(
     """
 
 
-    tgt = src[:, -1, 0]
+    tgt = src[:, -1]
 
     # Iteratively concatenate tgt with the first element in the prediction
     for _ in range(forecast_window - 1):
