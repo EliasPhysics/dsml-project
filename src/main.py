@@ -14,8 +14,8 @@ dec_seq_len = 20
 input_len = 100
 d_model = 512
 step_size = 5
-forecast_horizon = 2
-target_len = 1
+forecast_horizon = 5
+target_len = 20
 n_enc_layers = 2
 n_dec_layers = 2
 
@@ -36,7 +36,8 @@ indices = utils.get_indices_input_target(num_obs=data.shape[0],
 #masks = utils.generate_square_subsequent_mask()
 
 datamanager = TransformerDataset(data=data,
-                                 indices=indices,enc_seq_len=enc_seq_len,
+                                 indices=indices,
+                                 enc_seq_len=enc_seq_len,
                                  dec_seq_len=dec_seq_len,
                                  target_seq_len=target_len)
 
