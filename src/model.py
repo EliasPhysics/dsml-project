@@ -24,6 +24,7 @@ class TimeSeriesTransformer(nn.Module):
 
         self.encoder = Encoder(input_size=input_size,
                                d_model=d_model,
+                               nhead=n_heads,
                                n_encoder_layers=n_encoder_layers,
                                dropout_encoder=dropout_encoder,
                                dropout_pos_enc=dropout_pos_enc,

@@ -22,12 +22,9 @@ n_dec_layers = 2
 
 # initialize data
 os.chdir("..")
-data = utils.read_data("data/lorenz64_on0.05_train.npy")
+data = utils.read_data("data/lorenz63_on0.05_train.npy")
 input_size = data.shape[1]
 
-
-optimizer = torch.optim.Adam()
-criterion = torch.nn.HuberLoss()
 
 # create training batches
 indices = utils.get_indices_input_target(num_obs=data.shape[0],
@@ -50,6 +47,9 @@ model = TimeSeriesTransformer(input_size=input_size,
                               n_decoder_layers=n_dec_layers,
                               dec_seq_len=dec_seq_len
                               )
+
+optimizer = torch.optim.Adam(params=model.parameters())
+criterion = torch.nn.HuberLoss()
 
 
 # Iterate over all epochs

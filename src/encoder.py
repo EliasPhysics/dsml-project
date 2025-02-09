@@ -10,6 +10,7 @@ class Encoder(nn.Module):
     def __init__(self,
                  input_size:int,
                  d_model:int,
+                 nhead:int,
                  n_encoder_layers:int,
                  dropout_encoder:float=0.2,
                  dropout_pos_enc:float=0.2,
@@ -40,6 +41,7 @@ class Encoder(nn.Module):
         # now build encoder layer
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=d_model,
+            nhead = nhead,
             dim_feedforward=dim_feedforward_encoder,
             dropout=dropout_encoder,
         )
