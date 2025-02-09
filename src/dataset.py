@@ -111,6 +111,8 @@ class TransformerDataset(Dataset):
                 is compared when computing loss.
 
         """
+        print(f"enc_seq_len : {enc_seq_len} target seq len: {target_seq_len}")
+
         assert len(
             sequence) == enc_seq_len + target_seq_len, "Sequence length does not equal (input length + target length)"
 
