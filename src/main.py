@@ -11,7 +11,7 @@ epochs = 10
 forecast_window = 10
 enc_seq_len = 20
 dec_seq_len = 20
-input_len = 100
+input_len = 40
 d_model = 512
 step_size = 5
 forecast_horizon = 5
@@ -28,7 +28,7 @@ input_size = data.shape[1]
 
 # create training batches
 indices = utils.get_indices_input_target(num_obs=data.shape[0],
-                                         input_len=target_len,
+                                         input_len=input_len,
                                          step_size=step_size,
                                          forecast_horizon=forecast_horizon,
                                          target_len=target_len)
