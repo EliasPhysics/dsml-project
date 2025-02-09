@@ -44,7 +44,7 @@ class PositionalEncoder(nn.Module):
 
         returns: Tensor, shape [batch_size,enc_seq_len, dim_val]
         """
-        print(f"forward tensor shape: {x.shape}")
+        print(f"forward tensor shape: {x.shape}, pos enc shape: {self.pos_encoding[:, :x.size(1)]}")
         x = x + self.pos_encoding[:, :x.size(1)]
 
         return self.dropout(x)
