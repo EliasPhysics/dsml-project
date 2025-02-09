@@ -8,19 +8,26 @@ import os
 
 # Training parameters
 epochs = 10
-forecast_window = 48
-enc_seq_len = 168
+forecast_window = 10
+enc_seq_len = 20
+dec_seq_len = 20
 input_len = 100
+d_model = 512
 step_size = 5
-forecast_horizon = 30
-target_len = 10
+forecast_horizon = 2
+target_len = 1
+n_enc_layers = 2
+n_dec_layers = 2
+
 
 # initialize data
 os.chdir("..")
 data = utils.read_data("data/lorenz64_on0.05_train.npy")
+input_size = data.shape[1]
+
 
 optimizer = torch.optim.Adam()
-criterion = torch.nn.MSELoss()
+criterion = torch.nn.HuberLoss()
 
 # create training batches
 indices = utils.get_indices_input_target(num_obs=data.shape[0],
@@ -37,11 +44,11 @@ datamanager = TransformerDataset(data=data,
                                  target_seq_len=target_len)
 
 
-model = TimeSeriesTransformer(input_size=5,
-                              d_model=5,
-                              n_encoder_layers=4,
-                              n_decoder_layers=4,
-                              dec_seq_len=5
+model = TimeSeriesTransformer(input_size=input_size,
+                              d_model=d_model,
+                              n_encoder_layers=n_enc_layers,
+                              n_decoder_layers=n_dec_layers,
+                              dec_seq_len=dec_seq_len
                               )
 
 
