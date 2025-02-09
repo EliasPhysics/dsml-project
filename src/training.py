@@ -14,9 +14,8 @@ def run_encoder_decoder_inference(
         bla
     """
 
-    # Take the last value of thetarget variable in all batches in src and make it tgt
-    # as per the Influenza paper
-    tgt = src[:, -1, 0]  # shape [1, batch_size, 1]
+
+    tgt = src[:, -1, 0]
 
     # Iteratively concatenate tgt with the first element in the prediction
     for _ in range(forecast_window - 1):
