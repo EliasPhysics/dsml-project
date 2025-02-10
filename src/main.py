@@ -4,22 +4,16 @@ from dataset import TransformerDataset
 import utils
 from model import TimeSeriesTransformer
 import os
+from torch.utils.data import DataLoader
 
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
 
 # Training parameters
 epochs = 10
+batch_size = 128
 forecast_window = 10
-enc_seq_len = 20
-dec_seq_len = 20
-input_len = 40
-d_model = 128
-step_size = 100
-forecast_horizon = 5
-target_len = 20
-n_enc_layers = 2
-n_dec_layers = 2
+
 
 # initialize data
 os.chdir("..")
@@ -27,31 +21,69 @@ data = utils.read_data("data/lorenz63_on0.05_train.npy")
 input_size = data.shape[1]
 
 
-# create training batches
-indices = utils.get_indices_input_target(num_obs=data.shape[0],
-                                         input_len=input_len,
-                                         step_size=step_size,
-                                         forecast_horizon=forecast_horizon,
-                                         target_len=target_len)
 
-#masks = utils.generate_square_subsequent_mask()
 
-datamanager = TransformerDataset(data=data,
-                                 indices=indices,
+## Params
+dim_val = 512
+n_heads = 8
+n_decoder_layers = 4
+n_encoder_layers = 4
+dec_seq_len = 92 # length of input given to decoder
+enc_seq_len = 153 # length of input given to encoder
+output_seq_len = 48 # target sequence length. If hourly data and length = 48, you predict 2 days ahead
+window_size = enc_seq_len + output_seq_len # used to slice data into sub-sequences
+step_size = 100 # Step size, i.e. how many time steps does the moving window move at each step
+in_features_encoder_linear_layer = 2048
+in_features_decoder_linear_layer = 2048
+max_seq_len = enc_seq_len
+
+
+
+
+training_indices = utils.get_indices_entire_sequence(
+    data=data,
+    window_size=window_size,
+    step_size=step_size)
+
+training_data = TransformerDataset(data=data,
+                                 indices=training_indices,
                                  enc_seq_len=enc_seq_len,
                                  dec_seq_len=dec_seq_len,
-                                 target_seq_len=target_len)
+                                 target_seq_len=output_seq_len)
 
+training_data = DataLoader(training_data, batch_size)
+
+i, batch = next(enumerate(training_data))
+
+src, trg, trg_y = batch
 
 model = TimeSeriesTransformer(input_size=input_size,
-                              d_model=d_model,
-                              n_encoder_layers=n_enc_layers,
-                              n_decoder_layers=n_dec_layers,
-                              dec_seq_len=dec_seq_len
+                              dec_seq_len=enc_seq_len
                               )
 
 optimizer = torch.optim.Adam(params=model.parameters())
 criterion = torch.nn.HuberLoss()
+
+# Make src mask for decoder with size:
+# [batch_size*n_heads, output_sequence_length, enc_seq_len]
+src_mask = utils.generate_square_subsequent_mask(
+    dim1=output_seq_len,
+    dim2=enc_seq_len
+    )
+
+# Make tgt mask for decoder with size:
+# [batch_size*n_heads, output_sequence_length, output_sequence_length]
+tgt_mask = utils.generate_square_subsequent_mask(
+    dim1=output_seq_len,
+    dim2=output_seq_len
+    )
+
+output = model(
+    src=src,
+    tgt=trg,
+    src_mask=src_mask,
+    tgt_mask=tgt_mask
+    )
 
 
 # Iterate over all epochs

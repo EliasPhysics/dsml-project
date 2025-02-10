@@ -22,33 +22,7 @@ class Decoder(nn.Module):
         # initialize the torch nn.Module
         super().__init__()
 
-        self.dec_seq_len = dec_seq_len
 
-        self.decoder_input_layer = nn.Linear(
-            in_features=num_predicted_features,
-            out_features=d_model,
-        )
-
-        # create one decoder layer
-        decoder_layer = nn.TransformerDecoderLayer(
-            d_model=d_model,
-            nhead=n_heads,
-            dim_feedforward=dim_feedforward_decoder,
-            dropout=dropout_decoder,
-            batch_first = True
-        )
-
-       # stack the decoder layers
-        self.decoder = nn.TransformerDecoder(
-            decoder_layer=decoder_layer,
-            num_layers=n_decoder_layers,
-            norm=None
-        )
-
-        self.linear_mapping = nn.Linear(
-            in_features=d_model,
-            out_features=num_predicted_features
-        )
 
     def forward(self, tgt: Tensor, src: Tensor, tgt_mask: Tensor=None, src_mask: Tensor=None) -> Tensor:
 

@@ -15,26 +15,25 @@ def run_encoder_decoder_inference(
     """
 
 
-    tgt = src[:, -1]
+    tgt = src[-1]
+    print(f"src: {src.shape}, tgt: {tgt.shape}")
 
     # Iteratively concatenate tgt with the first element in the prediction
     for _ in range(forecast_window - 1):
 
         # Create masks
-        dim1 = tgt.shape[1]
+        dim1 = tgt.shape[0]
 
         dim2 = src.shape[1]
 
         tgt_mask = utils.generate_square_subsequent_mask(
             dim1=dim1,
-            dim2=dim1,
-            device=device
+            dim2=dim1
         )
 
         src_mask = utils.generate_square_subsequent_mask(
             dim1=dim1,
-            dim2=dim2,
-            device=device
+            dim2=dim2
         )
 
         # Make prediction
@@ -61,14 +60,12 @@ def run_encoder_decoder_inference(
 
     tgt_mask = utils.generate_square_subsequent_mask(
         dim1=dim1,
-        dim2=dim1,
-        device=device
+        dim2=dim1
     )
 
     src_mask = utils.generate_square_subsequent_mask(
         dim1=dim1,
-        dim2=dim2,
-        device=device
+        dim2=dim2
     )
 
     # Make final prediction

@@ -26,34 +26,6 @@ class Encoder(nn.Module):
         super().__init__()
 
 
-        self.encoder_input_layer = nn.Linear(
-            in_features=input_size,
-            out_features=d_model
-        )
-
-        # Create positional encoder from other module
-        self.positional_encoding_layer = positional_encoder.PositionalEncoder(
-            max_seq_len=max_seq_len,
-            d_model=d_model,
-            dropout=dropout_pos_enc
-        )
-
-        # now build encoder layer
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=d_model,
-            nhead = nhead,
-            dim_feedforward=dim_feedforward_encoder,
-            dropout=dropout_encoder,
-            batch_first=True
-        )
-
-        # stack encoder layers to obtain Encoder
-        self.encoder = nn.TransformerEncoder(
-            encoder_layer=encoder_layer,
-            num_layers=n_encoder_layers,
-            norm=None
-        )
-
 
 
 
