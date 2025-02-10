@@ -67,14 +67,14 @@ criterion = torch.nn.HuberLoss()
 # Make src mask for decoder with size:
 # [batch_size*n_heads, output_sequence_length, enc_seq_len]
 src_mask = utils.generate_square_subsequent_mask(
-    dim1=output_seq_len,
+    dim1=enc_seq_len,
     dim2=enc_seq_len
     )
 
 # Make tgt mask for decoder with size:
 # [batch_size*n_heads, output_sequence_length, output_sequence_length]
 tgt_mask = utils.generate_square_subsequent_mask(
-    dim1=output_seq_len,
+    dim1=enc_seq_len,
     dim2=output_seq_len
     )
 
@@ -96,13 +96,13 @@ for epoch in range(epochs):
 
         # Generate masks
         src_mask = utils.generate_square_subsequent_mask(
-            dim1=output_seq_len,
-            dim2=output_seq_len
+            dim1=enc_seq_len,
+            dim2=enc_seq_len
         )
 
         tgt_mask = utils.generate_square_subsequent_mask(
-            dim1=output_seq_len,
-            dim2=enc_seq_len
+            dim1=enc_seq_len,
+            dim2=output_seq_len
         )
 
         # Make forecasts
