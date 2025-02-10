@@ -96,13 +96,13 @@ for epoch in range(epochs):
 
         # Generate masks
         src_mask = utils.generate_square_subsequent_mask(
-            dim1=enc_seq_len,
-            dim2=enc_seq_len
+            dim1=output_seq_len,
+            dim2=output_seq_len
         )
 
         tgt_mask = utils.generate_square_subsequent_mask(
-            dim1=enc_seq_len,
-            dim2=output_seq_len
+            dim1=output_seq_len,
+            dim2=enc_seq_len
         )
 
         # Make forecasts
