@@ -125,5 +125,6 @@ class TimeSeriesTransformer(nn.Module):
         )
 
         decoder_output = self.linear_mapping(decoder_output)
+        print(decoder_output.shape)
 
         return decoder_output
