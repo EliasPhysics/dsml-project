@@ -11,7 +11,7 @@ device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
 # Training parameters
 epochs = 10
-batch_size = 128
+batch_size = 32
 forecast_window = 10
 
 
@@ -32,7 +32,7 @@ dec_seq_len = 92 # length of input given to decoder
 enc_seq_len = 153 # length of input given to encoder
 output_seq_len = 48 # target sequence length. If hourly data and length = 48, you predict 2 days ahead
 window_size = enc_seq_len + output_seq_len # used to slice data into sub-sequences
-step_size = 100 # Step size, i.e. how many time steps does the moving window move at each step
+step_size = 10 # Step size, i.e. how many time steps does the moving window move at each step
 in_features_encoder_linear_layer = 2048
 in_features_decoder_linear_layer = 2048
 max_seq_len = enc_seq_len
