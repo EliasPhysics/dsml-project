@@ -1,5 +1,6 @@
 import torch
 import training
+from tqdm import tqdm
 from dataset import TransformerDataset
 import utils
 from model import TimeSeriesTransformer
@@ -87,7 +88,7 @@ output = model(
 
 
 # Iterate over all epochs
-for epoch in range(epochs):
+for epoch in tqdm(range(epochs)):
 
     # Iterate over all (x,y) pairs in training dataloader
     for i, (src, tgt, tgt_y) in enumerate(training_data):
