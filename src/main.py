@@ -31,7 +31,7 @@ n_decoder_layers = 4
 n_encoder_layers = 4
 dec_seq_len = 92 # length of input given to decoder
 enc_seq_len = 153 # length of input given to encoder
-output_seq_len = 48 # target sequence length. If hourly data and length = 48, you predict 2 days ahead
+output_seq_len = 64 # target sequence length. If hourly data and length = 48, you predict 2 days ahead
 window_size = enc_seq_len + output_seq_len # used to slice data into sub-sequences
 step_size = 10 # Step size, i.e. how many time steps does the moving window move at each step
 in_features_encoder_linear_layer = 2048
@@ -122,4 +122,6 @@ for epoch in tqdm(range(epochs)):
     # Iterate over all (x,y) pairs in validation dataloader
     model.eval()
 
-    #data_validation = utils.read_data("data/lorenz63_on0.05_train.npy")
+torch.save(model.state_dict(), "models/test1")
+
+data_validation = utils.read_data("data/lorenz63_on0.05_train.npy")
