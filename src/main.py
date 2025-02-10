@@ -90,19 +90,19 @@ output = model(
 for epoch in range(epochs):
 
     # Iterate over all (x,y) pairs in training dataloader
-    for i, (src, tgt, tgt_y) in enumerate(datamanager):
+    for i, (src, tgt, tgt_y) in enumerate(training_data):
         # zero the parameter gradients
         optimizer.zero_grad()
 
         # Generate masks
-        tgt_mask = utils.generate_square_subsequent_mask(
-            dim1=target_len,
-            dim2=target_len
+        src_mask = utils.generate_square_subsequent_mask(
+            dim1=enc_seq_len,
+            dim2=enc_seq_len
         )
 
-        src_mask = utils.generate_square_subsequent_mask(
-            dim1=target_len,
-            dim2=target_len
+        tgt_mask = utils.generate_square_subsequent_mask(
+            dim1=enc_seq_len,
+            dim2=output_seq_len
         )
 
         # Make forecasts
