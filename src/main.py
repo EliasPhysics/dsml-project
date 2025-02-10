@@ -96,18 +96,18 @@ for epoch in range(epochs):
 
         # Generate masks
         src_mask = utils.generate_square_subsequent_mask(
-            dim1=enc_seq_len,
+            dim1=forecast_window,
             dim2=enc_seq_len
         )
 
         tgt_mask = utils.generate_square_subsequent_mask(
-            dim1=enc_seq_len,
-            dim2=output_seq_len
+            dim1=forecast_window,
+            dim2=forecast_window
         )
 
         # Make forecasts
         #print(f"src: {src.shape}, tgt: {tgt.shape}")
-        prediction = model(src, tgt, src_mask, tgt_mask)
+        prediction = model(src=src, tgt=tgt, src_mask=src_mask, tgt_mask=tgt_mask)
 
         # Compute and backprop loss
         loss = criterion(tgt_y, prediction)
