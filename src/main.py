@@ -121,27 +121,4 @@ for epoch in range(epochs):
     # Iterate over all (x,y) pairs in validation dataloader
     model.eval()
 
-    data_validation = utils.read_data("data/lorenz63_on0.05_train.npy")
-    indices_validation = utils.get_indices_input_target(num_obs=data_validation.shape[0],
-                                             input_len=input_len,
-                                             step_size=step_size,
-                                             forecast_horizon=forecast_horizon,
-                                             target_len=target_len)
-    validation_datamanager = TransformerDataset(data=data_validation,
-                                     indices=indices,
-                                     enc_seq_len=enc_seq_len,
-                                     dec_seq_len=dec_seq_len,
-                                     target_seq_len=target_len)
-
-    with torch.no_grad():
-
-        for i, (src, _, tgt_y) in enumerate(validation_datamanager):
-            prediction = training.run_encoder_decoder_inference(
-                model=model,
-                src=src,
-                forecast_window=forecast_window,
-                batch_size=src.shape[0],
-                device=device
-            )
-
-            loss = criterion(tgt_y, prediction)
+    #data_validation = utils.read_data("data/lorenz63_on0.05_train.npy")
