@@ -13,7 +13,6 @@ device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 # Training parameters
 epochs = 10
 batch_size = 32
-forecast_window = 48
 
 
 # initialize data
@@ -122,6 +121,6 @@ for epoch in tqdm(range(epochs)):
     # Iterate over all (x,y) pairs in validation dataloader
     model.eval()
 
-torch.save(model.state_dict(), "models/test1")
+torch.save(model.state_dict(), "models/test1.pth.pth")
 
 data_validation = utils.read_data("data/lorenz63_on0.05_train.npy")

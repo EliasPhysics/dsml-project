@@ -11,26 +11,46 @@ from torch.utils.data import DataLoader
 # Set device
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
-# Define model parameters (ensure these match the training phase)
-d_model = 512
+os.chdir("..")
+data_validation = utils.read_data("data/lorenz63_on0.05_train.npy")
+input_size = data_validation.shape[1]
+batch_size = 32
+
+
+
+## Params
+dim_val = 512
 n_heads = 8
-num_encoder_layers = 6
-num_decoder_layers = 6
-dim_feedforward = 2048
-dropout = 0.1
-num_predicted_features = 3  # Adjust based on your dataset
+n_decoder_layers = 4
+n_encoder_layers = 4
+dec_seq_len = 92 # length of input given to decoder
+enc_seq_len = 153 # length of input given to encoder
+output_seq_len = 64 # target sequence length. If hourly data and length = 48, you predict 2 days ahead
+window_size = enc_seq_len + output_seq_len # used to slice data into sub-sequences
+step_size = 10 # Step size, i.e. how many time steps does the moving window move at each step
+in_features_encoder_linear_layer = 2048
+in_features_decoder_linear_layer = 2048
+max_seq_len = enc_seq_len
+
+
+src_mask = utils.generate_square_subsequent_mask(
+    dim1=output_seq_len,
+    dim2=enc_seq_len
+    )
+
+# Make tgt mask for decoder with size:
+# [batch_size*n_heads, output_sequence_length, output_sequence_length]
+tgt_mask = utils.generate_square_subsequent_mask(
+    dim1=output_seq_len,
+    dim2=output_seq_len
+    )
+
 
 # Load the trained model
-model_path = "saved_model.pth"  # Change path if needed
-model = TimeSeriesTransformer(
-    d_model=d_model,
-    n_heads=n_heads,
-    num_encoder_layers=num_encoder_layers,
-    num_decoder_layers=num_decoder_layers,
-    dim_feedforward=dim_feedforward,
-    dropout=dropout,
-    num_predicted_features=num_predicted_features
-).to(device)
+model_path = "models/test1.pth"  # Change path if needed
+model = TimeSeriesTransformer(input_size=input_size,
+                              dec_seq_len=enc_seq_len
+                              ).to(device)
 
 if os.path.exists(model_path):
     model.load_state_dict(torch.load(model_path, map_location=device))
@@ -40,8 +60,18 @@ else:
     raise FileNotFoundError(f"Model file not found at {model_path}")
 
 # Load test dataset
-test_dataset = TransformerDataset(split="test")  # Ensure your dataset class supports test split
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+training_indices = utils.get_indices_entire_sequence(
+    data=data_validation,
+    window_size=window_size,
+    step_size=step_size)
+
+
+val_data_loader = TransformerDataset(data=data_validation,
+                                 indices=training_indices,
+                                 enc_seq_len=enc_seq_len,
+                                 dec_seq_len=dec_seq_len,
+                                 target_seq_len=output_seq_len)
+val_data_loader = DataLoader(val_data_loader, batch_size)
 
 # Loss function
 criterion = torch.nn.MSELoss()
@@ -54,8 +84,8 @@ predictions = []
 # Run inference on the test set
 print("Running inference on test data...")
 with torch.no_grad():
-    for batch in tqdm(test_loader):
-        src, tgt, src_mask, tgt_mask = batch
+    for batch in tqdm(data_validation):
+        src, tgt, tgt_y = batch
 
         src, tgt = src.to(device), tgt.to(device)
         src_mask, tgt_mask = src_mask.to(device), tgt_mask.to(device)
