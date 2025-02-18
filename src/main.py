@@ -12,7 +12,7 @@ device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
 
 # Training parameters
-epochs = 10
+epochs = 5
 batch_size = 32
 
 
@@ -25,15 +25,17 @@ input_size = data.shape[1]
 
 
 ## Params
-dim_val = 512
+dim_val = 256
 n_heads = 8
-n_decoder_layers = 4
-n_encoder_layers = 4
+n_decoder_layers = 2
+n_encoder_layers = 2
 dec_seq_len = 92 # length of input given to decoder
 enc_seq_len = 153 # length of input given to encoder
 output_seq_len = 64 # target sequence length. If hourly data and length = 48, you predict 2 days ahead
 window_size = enc_seq_len + output_seq_len # used to slice data into sub-sequences
-step_size = 10 # Step size, i.e. how many time steps does the moving window move at each step
+
+step_size = 25 # Step size, i.e. how many time steps does the moving window move at each step
+
 in_features_encoder_linear_layer = 2048
 in_features_decoder_linear_layer = 2048
 max_seq_len = enc_seq_len
@@ -53,10 +55,6 @@ training_data = TransformerDataset(data=data,
                                  target_seq_len=output_seq_len)
 
 training_data = DataLoader(training_data, batch_size)
-
-i, batch = next(enumerate(training_data))
-
-src, trg, trg_y = batch
 
 model = TimeSeriesTransformer(input_size=input_size,
                               dec_seq_len=enc_seq_len
@@ -78,14 +76,6 @@ tgt_mask = utils.generate_square_subsequent_mask(
     dim1=output_seq_len,
     dim2=output_seq_len
     )
-
-output = model(
-    src=src,
-    tgt=trg,
-    src_mask=src_mask,
-    tgt_mask=tgt_mask
-    )
-
 
 losses = []
 
@@ -114,10 +104,10 @@ for epoch in tqdm(range(epochs)):
 
         # Compute and backprop loss
         loss = criterion(tgt_y, prediction)
-        losses.append(loss)
+        losses.append(loss.detach())
 
         loss.backward()
-        #print(loss)
+        #print(loss.detach())
 
         # Take optimizer step
         optimizer.step()
@@ -125,7 +115,7 @@ for epoch in tqdm(range(epochs)):
     # Iterate over all (x,y) pairs in validation dataloader
     model.eval()
 
-model_name = "test1"
+model_name = "test3"
 torch.save(model.state_dict(), f"models/{model_name}.pth")
 
 plt.plot(range(len(losses)),losses)

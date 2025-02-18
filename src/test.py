@@ -1,3 +1,4 @@
+import numpy
 import torch
 import training
 from tqdm import tqdm
@@ -7,12 +8,13 @@ from model import TimeSeriesTransformer
 import os
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+import random
 
 # Set device
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
 os.chdir("..")
-data_validation = utils.read_data("data/lorenz63_on0.05_train.npy")
+data_validation = utils.read_data("data/lorenz63_on0.05_test.npy")
 input_size = data_validation.shape[1]
 batch_size = 32
 
@@ -33,17 +35,14 @@ in_features_decoder_linear_layer = 2048
 max_seq_len = enc_seq_len
 
 
-src_mask = utils.generate_square_subsequent_mask(
-    dim1=output_seq_len,
-    dim2=enc_seq_len
-    )
+data_train = utils.read_data("data/lorenz63_on0.05_train.npy")
 
-# Make tgt mask for decoder with size:
-# [batch_size*n_heads, output_sequence_length, output_sequence_length]
-tgt_mask = utils.generate_square_subsequent_mask(
-    dim1=output_seq_len,
-    dim2=output_seq_len
-    )
+start = random.randrange(len(data_train)-enc_seq_len-dec_seq_len)
+initial_condition = data_train[start:start+enc_seq_len + dec_seq_len]
+
+src = initial_condition[:enc_seq_len]
+tgt = initial_condition[enc_seq_len:]
+
 
 
 # Load the trained model
@@ -73,6 +72,7 @@ val_data_loader = TransformerDataset(data=data_validation,
                                  target_seq_len=output_seq_len)
 val_data_loader = DataLoader(val_data_loader, batch_size)
 
+
 # Loss function
 criterion = torch.nn.MSELoss()
 
@@ -80,34 +80,23 @@ criterion = torch.nn.MSELoss()
 all_losses = []
 true_values = []
 predictions = []
+generated_time_series = numpy.zeros_like(data_validation) # val set size
 
 # Run inference on the test set
-print("Running inference on test data...")
+print("Creating data to compare")
 with torch.no_grad():
-    for batch in tqdm(data_validation):
-        src, tgt, tgt_y = batch
+    while len(generated_time_series) < len(data_validation):
 
         src, tgt = src.to(device), tgt.to(device)
         src_mask, tgt_mask = src_mask.to(device), tgt_mask.to(device)
 
         # Forward pass
-        output = model(src, tgt, src_mask, tgt_mask)
+        src = initial_condition[:enc_seq_len]
+        tgt= initial_condition[enc_seq_len:enc_seq_len+dec_seq_len]
+        output = model(src=src, tgt=tgt)
 
         # Compute loss
-        loss = criterion(output, tgt)
-        all_losses.append(loss.item())
-
-        # Store true values and predictions for plotting
-        true_values.append(tgt.cpu().numpy())
         predictions.append(output.cpu().numpy())
 
 # Plot the loss curve
-plt.figure(figsize=(10, 5))
-plt.plot(all_losses, label="Test Loss", marker='o', linestyle='-')
-plt.xlabel("Batch")
-plt.ylabel("Loss")
-plt.title("Test Loss Curve")
-plt.legend()
-plt.show()
-
 print("Testing complete!")
