@@ -6,6 +6,7 @@ import utils
 from model import TimeSeriesTransformer
 import os
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
@@ -86,6 +87,8 @@ output = model(
     )
 
 
+losses = []
+
 # Iterate over all epochs
 for epoch in tqdm(range(epochs)):
 
@@ -111,6 +114,7 @@ for epoch in tqdm(range(epochs)):
 
         # Compute and backprop loss
         loss = criterion(tgt_y, prediction)
+        losses.append(loss)
 
         loss.backward()
         #print(loss)
@@ -121,6 +125,11 @@ for epoch in tqdm(range(epochs)):
     # Iterate over all (x,y) pairs in validation dataloader
     model.eval()
 
-torch.save(model.state_dict(), "models/test1.pth.pth")
+model_name = "test1"
+torch.save(model.state_dict(), f"models/{model_name}.pth")
 
-data_validation = utils.read_data("data/lorenz63_on0.05_train.npy")
+plt.plot(range(len(losses)),losses)
+plt.ylabel("loss")
+plt.xlabel("epochs")
+plt.savefig(f"plots/training_{model_name}.png")
+
