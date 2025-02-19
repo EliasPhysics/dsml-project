@@ -9,14 +9,15 @@ import os
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import random
+import numpy as np
 
 # Set device
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
+
 os.chdir("..")
-data_validation = utils.read_data("data/lorenz63_on0.05_test.npy")
+data_validation = utils.read_data("data/lorenz63_test.npy")
 input_size = data_validation.shape[1]
-batch_size = 32
 
 warmup_steps = 100
 
@@ -35,16 +36,6 @@ in_features_decoder_linear_layer = 2048
 max_seq_len = enc_seq_len
 
 
-data_train = utils.read_data("data/lorenz63_on0.05_train.npy")
-
-start = random.randrange(len(data_train)-enc_seq_len-dec_seq_len)
-initial_condition = data_train[start:start+enc_seq_len + dec_seq_len]
-
-src = initial_condition[:enc_seq_len]
-tgt = initial_condition[enc_seq_len-1:]
-
-
-
 # Load the trained model
 model_path = "models/test1.pth"  # Change path if needed
 model = TimeSeriesTransformer(input_size=input_size,
@@ -59,6 +50,18 @@ else:
     raise FileNotFoundError(f"Model file not found at {model_path}")
 
 
+
+data_train = utils.read_data("data/lorenz63_on0.05_train.npy")
+
+start = random.randrange(len(data_train)-enc_seq_len-output_seq_len)
+initial_condition = data_train[start:start+enc_seq_len + output_seq_len]
+initial_condition = initial_condition.unsqueeze(0)
+
+
+src = initial_condition[:,enc_seq_len]
+tgt = initial_condition[:,enc_seq_len - 1:len(initial_condition) - 1]
+
+
 # Run inference on the test set
 print("Creating data to compare")
 
@@ -68,13 +71,14 @@ i = 0
 
 while i < warmup_steps:
     with torch.no_grad():
+        src = src.squeeze(0)
+        tgt = tgt.squeeze(0)
         output = model(src, tgt)
-        print(output)
+        print(output.shape,warmup_time_series.shape)
+        warmup_time_series = torch.cat((warmup_time_series, output), dim=1)
 
-        initial_condition = data_train[start:start + enc_seq_len + dec_seq_len]
-
-        src = warmup_time_series[:enc_seq_len]
-        tgt = initial_condition[enc_seq_len - 1:]
+        src = warmup_time_series[:,output.shape[1]:enc_seq_len]
+        tgt = warmup_time_series[:,output.shape[1] + enc_seq_len - 1:len(warmup_time_series) - 1]
 
     i += 1
 

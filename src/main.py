@@ -86,6 +86,7 @@ for epoch in tqdm(range(epochs)):
     for i, (src, tgt, tgt_y) in enumerate(training_data):
         # zero the parameter gradients
         optimizer.zero_grad()
+        print(src.shape, tgt.shape)
 
         # Generate masks
         src_mask = utils.generate_square_subsequent_mask(
@@ -115,7 +116,7 @@ for epoch in tqdm(range(epochs)):
     # Iterate over all (x,y) pairs in validation dataloader
     model.eval()
 
-model_name = "test3"
+model_name = "test4"
 torch.save(model.state_dict(), f"models/{model_name}.pth")
 
 plt.plot(range(len(losses)),losses)

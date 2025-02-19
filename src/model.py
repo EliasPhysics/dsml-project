@@ -97,7 +97,7 @@ class TimeSeriesTransformer(nn.Module):
 
         returns: Tensor, shape [batch_size,enc_seq_len, dim_val]
         """
-        #print(f"forward tensor shape: {x.shape}, pos enc shape: {self.pe[:, :x.size(1)].shape}")
+        print(f"forward tensor shape: {x.shape}, pos enc shape: {self.pe[:, :x.size(1)].shape}")
         x = x + self.pe[:,:x.size(1)]
 
         return self.dropout(x)
@@ -119,7 +119,7 @@ class TimeSeriesTransformer(nn.Module):
 
         decoder_output = self.decoder(
             tgt=tgt,
-            memory=src,
+            memory=encoder_output,
             tgt_mask=tgt_mask,
             memory_mask=src_mask
         )
