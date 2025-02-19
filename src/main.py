@@ -34,7 +34,7 @@ enc_seq_len = 153 # length of input given to encoder
 output_seq_len = 64 # target sequence length. If hourly data and length = 48, you predict 2 days ahead
 window_size = enc_seq_len + output_seq_len # used to slice data into sub-sequences
 
-step_size = 25 # Step size, i.e. how many time steps does the moving window move at each step
+step_size = 100 # Step size, i.e. how many time steps does the moving window move at each step
 
 in_features_encoder_linear_layer = 2048
 in_features_decoder_linear_layer = 2048
@@ -86,7 +86,7 @@ for epoch in tqdm(range(epochs)):
     for i, (src, tgt, tgt_y) in enumerate(training_data):
         # zero the parameter gradients
         optimizer.zero_grad()
-        print(src.shape, tgt.shape)
+        #print(src.shape, tgt.shape)
 
         # Generate masks
         src_mask = utils.generate_square_subsequent_mask(

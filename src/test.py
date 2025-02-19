@@ -19,7 +19,7 @@ os.chdir("..")
 data_validation = utils.read_data("data/lorenz63_test.npy")
 input_size = data_validation.shape[1]
 
-warmup_steps = 100
+warmup_steps = 25
 
 ## Params
 dim_val = 512
@@ -37,7 +37,7 @@ max_seq_len = enc_seq_len
 
 
 # Load the trained model
-model_path = "models/test1.pth"  # Change path if needed
+model_path = "models/test4.pth"  # Change path if needed
 model = TimeSeriesTransformer(input_size=input_size,
                               dec_seq_len=enc_seq_len
                               ).to(device)
@@ -56,9 +56,9 @@ data_train = utils.read_data("data/lorenz63_on0.05_train.npy")
 start = random.randrange(len(data_train)-enc_seq_len-output_seq_len)
 initial_condition = data_train[start:start+enc_seq_len + output_seq_len]
 initial_condition = initial_condition.unsqueeze(0)
+print(initial_condition.shape)
 
-
-src = initial_condition[:,enc_seq_len]
+src = initial_condition[:,:enc_seq_len]
 tgt = initial_condition[:,enc_seq_len - 1:len(initial_condition) - 1]
 
 
@@ -71,38 +71,30 @@ i = 0
 
 while i < warmup_steps:
     with torch.no_grad():
-        src = src.squeeze(0)
-        tgt = tgt.squeeze(0)
         output = model(src, tgt)
-        print(output.shape,warmup_time_series.shape)
         warmup_time_series = torch.cat((warmup_time_series, output), dim=1)
 
         src = warmup_time_series[:,output.shape[1]:enc_seq_len]
         tgt = warmup_time_series[:,output.shape[1] + enc_seq_len - 1:len(warmup_time_series) - 1]
-
     i += 1
 
 
 
 
 
-generated_time_series = numpy.zeros_like(data_validation) # val set size
-
+generated_time_series = torch.zeros_(1,T,3)
 
 
 with torch.no_grad():
     while len(generated_time_series) < len(data_validation):
+        with torch.no_grad():
+            output = model(src, tgt)
+            warmup_time_series = torch.cat((warmup_time_series, output), dim=1)
 
-        src, tgt = src.to(device), tgt.to(device)
-        src_mask, tgt_mask = src_mask.to(device), tgt_mask.to(device)
+            src = warmup_time_series[:, output.shape[1]:enc_seq_len]
+            tgt = warmup_time_series[:, output.shape[1] + enc_seq_len - 1:len(warmup_time_series) - 1]
 
-        # Forward pass
-        src = initial_condition[:enc_seq_len]
-        tgt= initial_condition[enc_seq_len:enc_seq_len+dec_seq_len]
-        output = model(src=src, tgt=tgt)
 
-        # Compute loss
-        predictions.append(output.cpu().numpy())
 
 # Plot the loss curve
 print("Testing complete!")
