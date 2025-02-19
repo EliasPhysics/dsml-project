@@ -18,7 +18,7 @@ data_validation = utils.read_data("data/lorenz63_on0.05_test.npy")
 input_size = data_validation.shape[1]
 batch_size = 32
 
-
+warmup_steps = 100
 
 ## Params
 dim_val = 512
@@ -41,7 +41,7 @@ start = random.randrange(len(data_train)-enc_seq_len-dec_seq_len)
 initial_condition = data_train[start:start+enc_seq_len + dec_seq_len]
 
 src = initial_condition[:enc_seq_len]
-tgt = initial_condition[enc_seq_len:]
+tgt = initial_condition[enc_seq_len-1:]
 
 
 
@@ -58,32 +58,34 @@ if os.path.exists(model_path):
 else:
     raise FileNotFoundError(f"Model file not found at {model_path}")
 
-# Load test dataset
-training_indices = utils.get_indices_entire_sequence(
-    data=data_validation,
-    window_size=window_size,
-    step_size=step_size)
-
-
-val_data_loader = TransformerDataset(data=data_validation,
-                                 indices=training_indices,
-                                 enc_seq_len=enc_seq_len,
-                                 dec_seq_len=dec_seq_len,
-                                 target_seq_len=output_seq_len)
-val_data_loader = DataLoader(val_data_loader, batch_size)
-
-
-# Loss function
-criterion = torch.nn.MSELoss()
-
-# Initialize lists to store loss values
-all_losses = []
-true_values = []
-predictions = []
-generated_time_series = numpy.zeros_like(data_validation) # val set size
 
 # Run inference on the test set
 print("Creating data to compare")
+
+warmup_time_series = initial_condition
+
+i = 0
+
+while i < warmup_steps:
+    with torch.no_grad():
+        output = model(src, tgt)
+        print(output)
+
+        initial_condition = data_train[start:start + enc_seq_len + dec_seq_len]
+
+        src = warmup_time_series[:enc_seq_len]
+        tgt = initial_condition[enc_seq_len - 1:]
+
+    i += 1
+
+
+
+
+
+generated_time_series = numpy.zeros_like(data_validation) # val set size
+
+
+
 with torch.no_grad():
     while len(generated_time_series) < len(data_validation):
 
