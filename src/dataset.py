@@ -43,7 +43,7 @@ class TransformerDataset(Dataset):
 
         self.data = data
 
-        print("From get_src_trg: data size = {}".format(data.size()))
+        #print("From get_src_trg: data size = {}".format(data.size()))
 
         self.enc_seq_len = enc_seq_len
 

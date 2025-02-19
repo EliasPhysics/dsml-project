@@ -117,8 +117,6 @@ class TimeSeriesTransformer(nn.Module):
 
         tgt = self.decoder_input_layer(tgt)
 
-        print(encoder_output.shape)
-
         decoder_output = self.decoder(
             tgt=tgt,
             memory=encoder_output,
@@ -127,6 +125,5 @@ class TimeSeriesTransformer(nn.Module):
         )
 
         decoder_output = self.linear_mapping(decoder_output)
-        #print(decoder_output.shape)
 
         return decoder_output
