@@ -37,11 +37,13 @@ max_seq_len = enc_seq_len
 
 
 # Load the trained model
-model_name = "test5"
+model_name = "test6"
 model_path = f"models/{model_name}.pth"  # Change path if needed
 model = TimeSeriesTransformer(input_size=input_size,
                               dec_seq_len=enc_seq_len
                               ).to(device)
+
+model.eval()
 
 if os.path.exists(model_path):
     model.load_state_dict(torch.load(model_path, map_location=device))
@@ -68,18 +70,28 @@ print("Creating data to compare")
 
 warmup_time_series = initial_condition
 
-i = 0
+# Generate masks
+src_mask = utils.generate_square_subsequent_mask(
+    dim1=output_seq_len,
+    dim2=enc_seq_len
+)
 
-while i < warmup_steps:
-    with torch.no_grad():
-        output = model(src, tgt)
+tgt_mask = utils.generate_square_subsequent_mask(
+    dim1=output_seq_len,
+    dim2=output_seq_len
+)
+
+
+
+with torch.no_grad():
+    for i in range(warmup_steps):
+        output = model(src=src, tgt=tgt, src_mask=src_mask, tgt_mask=tgt_mask)
         warmup_time_series = torch.cat((warmup_time_series, output[:,-1].unsqueeze(0)), dim=1)
         #warmup_time_series = warmup_time_series[:,output.shape[1]:]
         warmup_time_series = warmup_time_series[:, 1:]
         #print(output,tgt)
         src = warmup_time_series[:,:enc_seq_len]
         tgt = warmup_time_series[:,enc_seq_len - 1:warmup_time_series.shape[1] - 1]
-    i += 1
 
 
 
@@ -91,8 +103,8 @@ src = warmup_time_series[:,:enc_seq_len]
 tgt = warmup_time_series[:,enc_seq_len - 1:len(warmup_time_series) - 1]
 
 with torch.no_grad():
-    while generated_time_series.shape[1] < data_validation.shape[0]:
-        output = model(src, tgt)
+    for i in tqdm(range(int(data_validation.shape[0]/10))):
+        output = model(src=src, tgt=tgt, src_mask=src_mask, tgt_mask=tgt_mask)
         generated_time_series = torch.cat((generated_time_series, output[:,-1].unsqueeze(0)), dim=1)
         current_generated_time_series = torch.cat((current_generated_time_series, output[:,-1].unsqueeze(0)), dim=1)
         #current_generated_time_series = current_generated_time_series[:,output.shape[1]:]

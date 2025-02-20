@@ -25,10 +25,10 @@ input_size = data.shape[1]
 
 
 ## Params
-dim_val = 256
+dim_val = 64
 n_heads = 8
-n_decoder_layers = 4
-n_encoder_layers = 4
+n_decoder_layers = 2
+n_encoder_layers = 2
 dec_seq_len = 16 # length of input given to decoder
 enc_seq_len = 32 # length of input given to encoder
 output_seq_len = 8 # target sequence length. If hourly data and length = 48, you predict 2 days ahead
@@ -36,8 +36,8 @@ window_size = enc_seq_len + output_seq_len # used to slice data into sub-sequenc
 
 step_size = 50 # Step size, i.e. how many time steps does the moving window move at each step
 
-in_features_encoder_linear_layer = 2048
-in_features_decoder_linear_layer = 2048
+in_features_encoder_linear_layer = 256
+in_features_decoder_linear_layer = 256
 max_seq_len = enc_seq_len
 
 
@@ -115,9 +115,9 @@ for epoch in tqdm(range(epochs)):
 
     # Iterate over all (x,y) pairs in validation dataloader
 
-model.eval()
 
-model_name = "test5"
+
+model_name = "test6"
 torch.save(model.state_dict(), f"models/{model_name}.pth")
 
 plt.plot(range(len(losses)),losses)
