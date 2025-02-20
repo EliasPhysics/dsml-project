@@ -103,7 +103,7 @@ class TimeSeriesTransformer(nn.Module):
         return self.dropout(x)
 
 
-    def forward(self, tgt: Tensor, src: Tensor, tgt_mask: Tensor=None, src_mask: Tensor=None) -> Tensor:
+    def forward(self, src: Tensor, tgt: Tensor, src_mask: Tensor=None, tgt_mask: Tensor=None) -> Tensor:
 
         src = self.encoder_input_layer(src)
 

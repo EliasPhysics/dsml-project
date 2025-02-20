@@ -1,74 +1,119 @@
-import torch.nn as nn
 import torch
+import training_example
+from tqdm import tqdm
+from dataset import TransformerDataset
 import utils
+from model import TimeSeriesTransformer
+import os
+from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+import hyperparameters
+
+device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
 
-def run_encoder_decoder_inference(
-        model: nn.Module,
-        src: torch.Tensor,
-        forecast_window: int,
-        batch_size: int,
-        device
-) -> torch.Tensor:
-    """
-        bla
-    """
+def train_TimeSeriesTransformer(data_path, args):
+    # Training parameters
+    epochs = args["epochs"]
+    batch_size = args["batch_size"]
+
+    # Initialize data
+    data = utils.read_data(data_path)
+
+    ## Params from args
+    dec_seq_len = args["dec_seq_len"]
+    enc_seq_len = args["enc_seq_len"]
+    output_seq_len = args["output_seq_len"]
+    window_size = args["window_size"]
+    step_size = args["step_size"]
+    max_seq_len = args["max_seq_len"]
 
 
-    tgt = src[-1]
-    print(f"src: {src.shape}, tgt: {tgt.shape}")
-
-    # Iteratively concatenate tgt with the first element in the prediction
-    for _ in range(forecast_window - 1):
-
-        # Create masks
-        dim1 = tgt.shape[0]
-
-        dim2 = src.shape[1]
-
-        tgt_mask = utils.generate_square_subsequent_mask(
-            dim1=dim1,
-            dim2=dim1
-        )
-
-        src_mask = utils.generate_square_subsequent_mask(
-            dim1=dim1,
-            dim2=dim2
-        )
-
-        # Make prediction
-        prediction = model(src, tgt, src_mask, tgt_mask)
-
-        # If statement simply makes sure that the predicted value is
-        # extracted and reshaped correctly
 
 
-        # Obtain predicted value
-        last_predicted_value = prediction[:, -1, :]
+    training_indices = utils.get_indices_entire_sequence(
+        data=data,
+        window_size=window_size,
+        step_size=step_size)
 
-        # Reshape from [batch_size, 1] --> [batch_size, 1, 1]
-        last_predicted_value = last_predicted_value.unsqueeze(-1)
+    training_data = TransformerDataset(data=data,
+                                     indices=training_indices,
+                                     enc_seq_len=enc_seq_len,
+                                     dec_seq_len=dec_seq_len,
+                                     target_seq_len=output_seq_len)
 
-        # Detach the predicted element from the graph and concatenate with
-        # tgt in dimension 1 or 0
-        tgt = torch.cat((tgt, last_predicted_value.detach()), 1)
+    training_data = DataLoader(training_data, batch_size)
 
-    # Create masks
-    dim1 = tgt.shape[1]
-
-    dim2 = src.shape[1]
-
-    tgt_mask = utils.generate_square_subsequent_mask(
-        dim1=dim1,
-        dim2=dim1
+    model = TimeSeriesTransformer(
+        input_size=data.shape[1],  # Assuming 'data' is already loaded
+        dec_seq_len=args["dec_seq_len"],
+        d_model=args["dim_val"],
+        n_encoder_layers=args["n_encoder_layers"],
+        n_decoder_layers=args["n_decoder_layers"],
+        dropout=0.2,  # Default value
+        max_seq_len=args["max_seq_len"],
+        dim_feedforward_encoder=args["in_features_encoder_linear_layer"],
+        n_heads=args["n_heads"],
+        dim_feedforward_decoder=args["in_features_decoder_linear_layer"],
+        num_predicted_features=3 # Assuming prediction targets match input features
     )
 
+
+    optimizer = torch.optim.Adam(params=model.parameters())
+    criterion = torch.nn.HuberLoss()
+
+    # Make src mask for decoder with size:
+    # [batch_size*n_heads, output_sequence_length, enc_seq_len]
     src_mask = utils.generate_square_subsequent_mask(
-        dim1=dim1,
-        dim2=dim2
-    )
+        dim1=output_seq_len,
+        dim2=enc_seq_len
+        )
 
-    # Make final prediction
-    final_prediction = model(src, tgt, src_mask, tgt_mask)
+    # Make tgt mask for decoder with size:
+    # [batch_size*n_heads, output_sequence_length, output_sequence_length]
+    tgt_mask = utils.generate_square_subsequent_mask(
+        dim1=output_seq_len,
+        dim2=output_seq_len
+        )
 
-    return final_prediction
+    losses = []
+
+    # Iterate over all epochs
+    for epoch in tqdm(range(epochs)):
+
+        # Iterate over all (x,y) pairs in training dataloader
+        for i, (src, tgt, tgt_y) in enumerate(training_data):
+            # zero the parameter gradients
+            optimizer.zero_grad()
+            #print(src.shape, tgt.shape)
+
+            # Make forecasts
+            #print(f"src: {src.shape}, tgt: {tgt.shape}")
+            prediction = model(src=src, tgt=tgt, src_mask=src_mask, tgt_mask=tgt_mask)
+
+            # Compute and backprop loss
+            loss = criterion(tgt_y, prediction)
+            losses.append(loss.detach())
+
+            loss.backward()
+            #print(loss.detach())
+
+            # Take optimizer step
+            optimizer.step()
+
+        # Iterate over all (x,y) pairs in validation dataloader
+
+
+
+    model_name = args["model_name"]
+    torch.save(model.state_dict(), f"models/{model_name}.pth")
+
+    plt.plot(range(len(losses)),losses)
+    plt.ylabel("loss")
+    plt.xlabel("epochs")
+    plt.savefig(f"plots/training_{model_name}.png")
+
+if __name__=="__main__":
+    os.chdir("..")
+    data_path = "data/lorenz63_on0.05_train.npy"
+    train_TimeSeriesTransformer(data_path=data_path,args=hyperparameters.args)
