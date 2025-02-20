@@ -59,14 +59,9 @@ def test_TimeSeriesTransformer(data_path,args):
     initial_condition = initial_condition.unsqueeze(0)
     print(initial_condition.shape)
 
-    src = initial_condition[:,:enc_seq_len]
-    tgt = initial_condition[:,enc_seq_len - 1:initial_condition.shape[1] - 1]
-
-
     # Run inference on the test set
     print("Creating data to compare")
 
-    warmup_time_series = initial_condition
 
     # Generate masks
     src_mask = utils.generate_square_subsequent_mask(
@@ -79,19 +74,19 @@ def test_TimeSeriesTransformer(data_path,args):
         dim2=output_seq_len
     )
 
-
+    warmup_time_series = initial_condition
 
     with torch.no_grad():
-        for i in range(warmup_steps):
-            #print(tgt.shape)
+        for _ in range(warmup_steps):
+            src = warmup_time_series[:, :enc_seq_len]
+            tgt = warmup_time_series[:, enc_seq_len - 1:warmup_time_series.shape[1] - 1]
             output = model(src=src, tgt=tgt)
             #print(output.shape)
             warmup_time_series = torch.cat((warmup_time_series, output[:,-1].unsqueeze(0)), dim=1)
             #warmup_time_series = warmup_time_series[:,output.shape[1]:]
             warmup_time_series = warmup_time_series[:, 1:]
             #print(output,tgt)
-            src = warmup_time_series[:,:enc_seq_len]
-            tgt = warmup_time_series[:,enc_seq_len - 1:warmup_time_series.shape[1] - 1]
+
 
 
 
@@ -99,20 +94,17 @@ def test_TimeSeriesTransformer(data_path,args):
 
     generated_time_series = warmup_time_series
     current_generated_time_series = warmup_time_series
-    src = warmup_time_series[:,:enc_seq_len]
-    tgt = warmup_time_series[:,enc_seq_len - 1:warmup_time_series.shape[1] - 1]
 
     with torch.no_grad():
-        for i in tqdm(range(int(data_validation.shape[0]))):
+        for _ in tqdm(range(int(data_validation.shape[0]))):
+            src = current_generated_time_series[:, :enc_seq_len]
+            tgt = current_generated_time_series[:, enc_seq_len - 1:current_generated_time_series.shape[1] - 1]
+
             output = model(src=src, tgt=tgt)
             generated_time_series = torch.cat((generated_time_series, output[:,-1].unsqueeze(0)), dim=1)
             current_generated_time_series = torch.cat((current_generated_time_series, output[:,-1].unsqueeze(0)), dim=1)
             #current_generated_time_series = current_generated_time_series[:,output.shape[1]:]
             current_generated_time_series = current_generated_time_series[:, 1:]
-
-            src = current_generated_time_series[:, :enc_seq_len]
-            tgt = current_generated_time_series[:, enc_seq_len - 1:current_generated_time_series.shape[1] - 1]
-
 
 
 

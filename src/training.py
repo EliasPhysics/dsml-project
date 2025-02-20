@@ -42,7 +42,7 @@ def train_TimeSeriesTransformer(data_path, args):
                                      dec_seq_len=dec_seq_len,
                                      target_seq_len=output_seq_len)
 
-    training_data = DataLoader(training_data, batch_size)
+    training_data = DataLoader(training_data, batch_size,shuffle=True)
 
     model = TimeSeriesTransformer(
         input_size=data.shape[1],  # Assuming 'data' is already loaded
