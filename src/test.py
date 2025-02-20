@@ -4,6 +4,7 @@ import utils
 from model import TimeSeriesTransformer
 import os
 import matplotlib.pyplot as plt
+import numpy as np
 import random
 import hyperparameters
 
@@ -118,7 +119,9 @@ def test_TimeSeriesTransformer(data_path,args):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    x,y,z = torch.transpose(generated_time_series.squeeze(0),dim0=0,dim1=1)
+    generated_trajectory = torch.transpose(generated_time_series.squeeze(0),dim0=0,dim1=1)
+    np.save(f"generated_trajectory_{model_name}.npy", generated_trajectory)
+    x,y,z = generated_trajectory
     x_or,y_or,z_or = torch.transpose(data_validation,dim0=0,dim1=1)
 
     # Plot the trajectory
