@@ -1,5 +1,4 @@
 import torch
-import training_example
 from tqdm import tqdm
 from dataset import TransformerDataset
 import utils
@@ -8,6 +7,7 @@ import os
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import hyperparameters
+import csv
 
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
@@ -26,9 +26,6 @@ def train_TimeSeriesTransformer(data_path, args):
     output_seq_len = args["output_seq_len"]
     window_size = args["window_size"]
     step_size = args["step_size"]
-    max_seq_len = args["max_seq_len"]
-
-
 
 
     training_indices = utils.get_indices_entire_sequence(
@@ -50,12 +47,12 @@ def train_TimeSeriesTransformer(data_path, args):
         d_model=args["dim_val"],
         n_encoder_layers=args["n_encoder_layers"],
         n_decoder_layers=args["n_decoder_layers"],
-        dropout=0.2,  # Default value
+        dropout=0.2,
         max_seq_len=args["max_seq_len"],
         dim_feedforward_encoder=args["in_features_encoder_linear_layer"],
         n_heads=args["n_heads"],
         dim_feedforward_decoder=args["in_features_decoder_linear_layer"],
-        num_predicted_features=3 # Assuming prediction targets match input features
+        num_predicted_features= 3 # Assuming prediction targets match input features
     )
 
 
@@ -112,6 +109,14 @@ def train_TimeSeriesTransformer(data_path, args):
     plt.ylabel("loss")
     plt.xlabel("epochs")
     plt.savefig(f"plots/training_{model_name}.png")
+
+    # Save hyperparameters as CSV
+    with open(f"models/{model_name}.csv", "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Name", "Age"])  # Column headers
+        for key, value in args.items():
+            writer.writerow([key, value])
+
 
 if __name__=="__main__":
     os.chdir("..")
