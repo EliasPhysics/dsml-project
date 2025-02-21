@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import hyperparameters
+from psd import power_spectrum_error, compute_power_spectrum
 
 # Set device
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
@@ -18,14 +19,8 @@ def test_TimeSeriesTransformer(data_path,args):
     warmup_steps = 100
 
     model_name = args["model_name"]
-    dec_seq_len = args["dec_seq_len"]
     enc_seq_len = args["enc_seq_len"]
     output_seq_len = args["output_seq_len"]
-    window_size = args["window_size"]
-    step_size = args["step_size"]
-    max_seq_len = args["max_seq_len"]
-
-
 
     # Load the trained model
     model_path = f"models/{model_name}.pth"  # Change path if needed
@@ -112,15 +107,14 @@ def test_TimeSeriesTransformer(data_path,args):
     generated_time_series = generated_time_series[:,:data_validation.shape[0]]
 
 
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
 
     # Create a 3D figure
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
     generated_trajectory = torch.transpose(generated_time_series.squeeze(0),dim0=0,dim1=1)
-    np.save(f"generated_trajectory_{model_name}.npy", generated_trajectory)
+    np.save(f"data/generated_trajectory_{model_name}.npy", generated_time_series)
+
     x,y,z = generated_trajectory
     x_or,y_or,z_or = torch.transpose(data_validation,dim0=0,dim1=1)
 
@@ -139,10 +133,30 @@ def test_TimeSeriesTransformer(data_path,args):
 
     # Display the plot
     plt.savefig(f"plots/3D_Trajectory_model{model_name}.png")
-    plt.show()
+    #plt.show()
+    plt.close()
+
+    print("Data generation complete, starting analysis!")
 
 
-    print("Data generation complete!")
+
+def analyze_generated_trajectories(model_name):
+
+    generated_trajectory = utils.read_data(f"data/generated_trajectory_{model_name}.npy")
+    test_trajectory = utils.read_data(f"data/lorenz63_test.npy")
+
+    ps = compute_power_spectrum(generated_trajectory)
+    ps_or = compute_power_spectrum(test_trajectory.unsqueeze(0))
+    print(ps.shape)
+    plt.plot(range(len(ps_or)), ps_or, label='Original Power Spectrum')
+    plt.plot(range(len(ps)), ps, label='Generated Power Spectrum')
+    plt.savefig(f"plots/{model_name}_power_spectrum.png")
+    plt.close()
+
+    ps_error = power_spectrum_error(generated_trajectory, test_trajectory)
+    print(ps_error.shape)
+    plt.plot(range(len(ps_error)), ps_error, label='Power Spectrum Error')
+    plt.savefig(f"plots/{model_name}_power_spectrum_error.png")
 
 
 
@@ -150,3 +164,4 @@ if __name__=="__main__":
     os.chdir("..")
     data_path = "data/lorenz63_on0.05_train.npy"
     test_TimeSeriesTransformer(data_path=data_path,args=hyperparameters.args)
+    analyze_generated_trajectories(model_name=hyperparameters.args["model_name"])
