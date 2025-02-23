@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import hyperparameters
-from psd import power_spectrum_error, compute_power_spectrum
+from psd import power_spectrum_error, get_average_spectrum
 
 # Set device
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
@@ -144,24 +144,60 @@ def analyze_generated_trajectories(model_name):
 
     generated_trajectory = utils.read_data(f"data/generated_trajectory_{model_name}.npy")
     test_trajectory = utils.read_data(f"data/lorenz63_test.npy")
+    print(generated_trajectory.shape)
+    print(test_trajectory.shape)
 
-    ps = compute_power_spectrum(generated_trajectory)
-    ps_or = compute_power_spectrum(test_trajectory.unsqueeze(0))
-    print(ps.shape)
-    plt.plot(range(len(ps_or)), ps_or, label='Original Power Spectrum')
-    plt.plot(range(len(ps)), ps, label='Generated Power Spectrum')
+    freqs = np.fft.rfftfreq(generated_trajectory.shape[1])
+    idx = np.argsort(freqs)
+    ps = get_average_spectrum(generated_trajectory)
+    ps_or = get_average_spectrum(test_trajectory.unsqueeze(0))
+
+    num_dims = generated_trajectory.shape[2]  # Number of dimensions
+
+    # Create subplots, one per dimension
+    fig, axes = plt.subplots(num_dims, 1, figsize=(8, 4 * num_dims), sharex=True)
+
+    for dim in range(num_dims):  # Loop over dimensions
+        ax = axes[dim]
+        ax.plot(freqs[idx], ps_or[0,:,dim], label=f'Original (Dim {dim})', linestyle="-", color="blue")
+        ax.plot(freqs[idx], ps[0,:,dim], label=f'Generated (Dim {dim})', linestyle="--", color="red")
+        ax.set_ylabel("Power")
+        ax.set_title(f"Power Spectrum (Dimension {dim})")
+        ax.legend()
+        ax.grid(True)
+
+    # Common labels
+    axes[-1].set_xlabel("Frequency")
+    plt.suptitle("Power Spectrum Comparison per Dimension")
+    plt.tight_layout()
+
+    plt.title(f"Power Spectrum")
+    plt.xlabel("Frequency")
     plt.savefig(f"plots/{model_name}_power_spectrum.png")
     plt.close()
 
-    ps_error = power_spectrum_error(generated_trajectory, test_trajectory)
+    ps_error = power_spectrum_error(generated_trajectory, test_trajectory.unsqueeze(0))
     print(ps_error.shape)
-    plt.plot(range(len(ps_error)), ps_error, label='Power Spectrum Error')
+    plt.plot(ps_error, ps_error, label='Power Spectrum Error')
     plt.savefig(f"plots/{model_name}_power_spectrum_error.png")
+
+    # Plot results
+
+     # Frequency bins
+
+    # Plot power spectra
+
+    ax.set_ylabel("Power")
+    ax.legend()
+
+
+
+
 
 
 
 if __name__=="__main__":
     os.chdir("..")
     data_path = "data/lorenz63_on0.05_train.npy"
-    test_TimeSeriesTransformer(data_path=data_path,args=hyperparameters.args)
+    #test_TimeSeriesTransformer(data_path=data_path,args=hyperparameters.args)
     analyze_generated_trajectories(model_name=hyperparameters.args["model_name"])

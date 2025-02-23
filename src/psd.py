@@ -10,7 +10,7 @@ def power_spectrum_error(x_gen, x_true):
     return np.array(pse_errors_per_dim).mean(axis=0)
 
 def compute_power_spectrum(x):
-    fft_real = np.fft.rfft(x)
+    fft_real = np.fft.rfft(x,axis=1)
     ps = np.abs(fft_real)**2
     ps_smoothed = gaussian_filter1d(ps, SMOOTHING_SIGMA)
     return ps_smoothed
