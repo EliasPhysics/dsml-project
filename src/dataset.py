@@ -39,7 +39,6 @@ class TransformerDataset(Dataset):
         src, trg, trg_y = self.get_src_trg(
             sequence=sequence,
             enc_seq_len=self.enc_seq_len,
-            dec_seq_len=self.dec_seq_len,
             target_seq_len=self.target_seq_len
         )
 
@@ -49,7 +48,6 @@ class TransformerDataset(Dataset):
             self,
             sequence: torch.Tensor,
             enc_seq_len: int,
-            dec_seq_len: int,
             target_seq_len: int
     ) -> Tuple[torch.tensor, torch.tensor, torch.tensor]:
 

@@ -52,7 +52,7 @@ def train_TimeSeriesTransformer(data_path, args):
         dim_feedforward_encoder=args["in_features_encoder_linear_layer"],
         n_heads=args["n_heads"],
         dim_feedforward_decoder=args["in_features_decoder_linear_layer"],
-        num_predicted_features= 3 # Assuming prediction targets match input features
+        num_predicted_features= data.shape[1] # Assuming prediction targets match input features
     )
 
 
@@ -93,7 +93,6 @@ def train_TimeSeriesTransformer(data_path, args):
             losses.append(loss.detach())
 
             loss.backward()
-            #print(loss.detach())
 
             # Take optimizer step
             optimizer.step()
@@ -120,5 +119,8 @@ def train_TimeSeriesTransformer(data_path, args):
 
 if __name__=="__main__":
     os.chdir("..")
-    data_path = "data/lorenz63_on0.05_train.npy"
-    train_TimeSeriesTransformer(data_path=data_path,args=hyperparameters.args)
+    data_path63 = "data/lorenz63_on0.05_train.npy"
+    train_TimeSeriesTransformer(data_path=data_path63,args=hyperparameters.args63)
+
+    data_path96 = "data/lorenz96_on0.05_train.npy"
+    train_TimeSeriesTransformer(data_path=data_path96, args=hyperparameters.args96)

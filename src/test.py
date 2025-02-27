@@ -12,20 +12,24 @@ from psd import power_spectrum_error, get_average_spectrum
 # Set device
 device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
 
-def test_TimeSeriesTransformer(data_path,args):
+def generate_TimeSeriesTransformer(data_path_train,data_path,args):
 
+    # data for comparison/ validation
     data_validation = utils.read_data(data_path)
 
+    # numver of warmup steps
     warmup_steps = 100
 
     model_name = args["model_name"]
     enc_seq_len = args["enc_seq_len"]
     output_seq_len = args["output_seq_len"]
 
+    data_train = utils.read_data(data_path_train)
+
     # Load the trained model
     model_path = f"models/{model_name}.pth"  # Change path if needed
     model = TimeSeriesTransformer(
-        input_size=3,  # Assuming 'data' is already loaded
+        input_size=data_validation.shape[1],  # Assuming 'data' is already loaded
         dec_seq_len=args["dec_seq_len"],
         d_model=args["dim_val"],
         n_encoder_layers=args["n_encoder_layers"],
@@ -35,10 +39,10 @@ def test_TimeSeriesTransformer(data_path,args):
         dim_feedforward_encoder=args["in_features_encoder_linear_layer"],
         n_heads=args["n_heads"],
         dim_feedforward_decoder=args["in_features_decoder_linear_layer"],
-        num_predicted_features=3  # Assuming prediction targets match input features
+        num_predicted_features= data_validation.shape[1]  # Assuming prediction targets match input features
     )
 
-
+    # load trained model
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()  # Set to evaluation mode
@@ -46,46 +50,29 @@ def test_TimeSeriesTransformer(data_path,args):
     else:
         raise FileNotFoundError(f"Model file not found at {model_path}")
 
-
-
-    data_train = utils.read_data("data/lorenz63_on0.05_train.npy")
-
+    # take some random initial condition from the training set
     start = random.randrange(len(data_train)-enc_seq_len-output_seq_len-1)
     initial_condition = data_train[start:start+enc_seq_len + output_seq_len]
     initial_condition = initial_condition.unsqueeze(0)
-    print(initial_condition.shape)
 
-    # Run inference on the test set
-    print("Creating data to compare")
+    print("Creating new time series")
 
 
-    # Generate masks
-    src_mask = utils.generate_square_subsequent_mask(
-        dim1=output_seq_len,
-        dim2=enc_seq_len
-    )
-
-    tgt_mask = utils.generate_square_subsequent_mask(
-        dim1=output_seq_len,
-        dim2=output_seq_len
-    )
-
+    # first warm up the model to get away from initial condition
     warmup_time_series = initial_condition
 
     with torch.no_grad():
         for _ in range(warmup_steps):
+            # devide data into src and tgt (encoder and decoder input)
             src = warmup_time_series[:, :enc_seq_len]
             tgt = warmup_time_series[:, enc_seq_len - 1:warmup_time_series.shape[1] - 1]
+
+            # calculate output
             output = model(src=src, tgt=tgt)
-            #print(output.shape)
+
+
             warmup_time_series = torch.cat((warmup_time_series, output[:,-1].unsqueeze(0)), dim=1)
-            #warmup_time_series = warmup_time_series[:,output.shape[1]:]
             warmup_time_series = warmup_time_series[:, 1:]
-            #print(output,tgt)
-
-
-
-
 
 
     generated_time_series = warmup_time_series
@@ -99,11 +86,10 @@ def test_TimeSeriesTransformer(data_path,args):
             output = model(src=src, tgt=tgt)
             generated_time_series = torch.cat((generated_time_series, output[:,-1].unsqueeze(0)), dim=1)
             current_generated_time_series = torch.cat((current_generated_time_series, output[:,-1].unsqueeze(0)), dim=1)
-            #current_generated_time_series = current_generated_time_series[:,output.shape[1]:]
             current_generated_time_series = current_generated_time_series[:, 1:]
 
 
-
+    # cute time series to be the right length
     generated_time_series = generated_time_series[:,:data_validation.shape[0]]
 
 
@@ -115,8 +101,8 @@ def test_TimeSeriesTransformer(data_path,args):
     generated_trajectory = torch.transpose(generated_time_series.squeeze(0),dim0=0,dim1=1)
     np.save(f"data/generated_trajectory_{model_name}.npy", generated_time_series)
 
-    x,y,z = generated_trajectory
-    x_or,y_or,z_or = torch.transpose(data_validation,dim0=0,dim1=1)
+    x,y,z = generated_trajectory[:3]
+    x_or,y_or,z_or = torch.transpose(data_validation[:,:3],dim0=0,dim1=1)
 
     # Plot the trajectory
     ax.plot(x, y, z, label='3D Trajectory', color='b',alpha=0.7)
@@ -136,16 +122,13 @@ def test_TimeSeriesTransformer(data_path,args):
     #plt.show()
     plt.close()
 
-    print("Data generation complete, starting analysis!")
 
 
 
-def analyze_generated_trajectories(model_name):
+def analyze_generated_trajectories(model_name,data_validation_path):
 
     generated_trajectory = utils.read_data(f"data/generated_trajectory_{model_name}.npy")
-    test_trajectory = utils.read_data(f"data/lorenz63_test.npy")
-    print(generated_trajectory.shape)
-    print(test_trajectory.shape)
+    test_trajectory = utils.read_data(data_validation_path)
 
     freqs = np.fft.rfftfreq(generated_trajectory.shape[1])
     idx = np.argsort(freqs)
@@ -159,10 +142,10 @@ def analyze_generated_trajectories(model_name):
 
     for dim in range(num_dims):  # Loop over dimensions
         ax = axes[dim]
-        ax.plot(freqs[idx], ps_or[0,:,dim], label=f'Original (Dim {dim})', linestyle="-", color="blue")
-        ax.plot(freqs[idx], ps[0,:,dim], label=f'Generated (Dim {dim})', linestyle="--", color="red")
+        ax.plot(freqs[idx], ps_or[0,:,dim], label=f'Original (Dim {dim +1})', linestyle="-", color="blue")
+        ax.plot(freqs[idx], ps[0,:,dim], label=f'Generated (Dim {dim + 1})', linestyle="--", color="red")
         ax.set_ylabel("Power")
-        ax.set_title(f"Power Spectrum (Dimension {dim})")
+        ax.set_title(f"Power Spectrum (Dimension {dim + 1})")
         ax.legend()
         ax.grid(True)
 
@@ -177,27 +160,19 @@ def analyze_generated_trajectories(model_name):
     plt.close()
 
     ps_error = power_spectrum_error(generated_trajectory, test_trajectory.unsqueeze(0))
-    print(ps_error.shape)
-    plt.plot(ps_error, ps_error, label='Power Spectrum Error')
-    plt.savefig(f"plots/{model_name}_power_spectrum_error.png")
-
-    # Plot results
-
-     # Frequency bins
-
-    # Plot power spectra
-
-    ax.set_ylabel("Power")
-    ax.legend()
-
-
-
+    print(ps_error)
 
 
 
 
 if __name__=="__main__":
     os.chdir("..")
-    data_path = "data/lorenz63_on0.05_train.npy"
-    #test_TimeSeriesTransformer(data_path=data_path,args=hyperparameters.args)
-    analyze_generated_trajectories(model_name=hyperparameters.args["model_name"])
+    data_path_train = "data/lorenz63_on0.05_train.npy"
+    data_path = "data/lorenz63_test.npy"
+    generate_TimeSeriesTransformer(data_path=data_path,data_path_train=data_path_train,args=hyperparameters.args63)
+    analyze_generated_trajectories(model_name=hyperparameters.args63["model_name"], data_validation_path=data_path)
+
+    data_path_train = "data/lorenz96_on0.05_train.npy"
+    data_path = "data/lorenz96_test.npy"
+    generate_TimeSeriesTransformer(data_path=data_path, data_path_train=data_path_train, args=hyperparameters.args96)
+    analyze_generated_trajectories(model_name=hyperparameters.args96["model_name"], data_validation_path=data_path)
