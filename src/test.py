@@ -10,8 +10,6 @@ import hyperparameters
 from psd import power_spectrum_error, get_average_spectrum
 
 # Set device
-device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
-
 def generate_TimeSeriesTransformer(data_path_train,data_path,args):
 
     # data for comparison/ validation
@@ -42,6 +40,8 @@ def generate_TimeSeriesTransformer(data_path_train,data_path,args):
         num_predicted_features= data_validation.shape[1]  # Assuming prediction targets match input features
     )
 
+    device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+
     # load trained model
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path, map_location=device))
@@ -49,6 +49,8 @@ def generate_TimeSeriesTransformer(data_path_train,data_path,args):
         print("Model loaded successfully!")
     else:
         raise FileNotFoundError(f"Model file not found at {model_path}")
+
+
 
     # take some random initial condition from the training set
     start = random.randrange(len(data_train)-enc_seq_len-output_seq_len-1)
@@ -140,7 +142,7 @@ def analyze_generated_trajectories(model_name,data_validation_path):
     # Create subplots, one per dimension
     fig, axes = plt.subplots(num_dims, 1, figsize=(8, 4 * num_dims), sharex=True)
 
-    for dim in range(num_dims):  # Loop over dimensions
+    for dim in range(min(num_dims,3)):  # Loop over dimensions , max 3
         ax = axes[dim]
         ax.plot(freqs[idx], ps_or[0,:,dim], label=f'Original (Dim {dim +1})', linestyle="-", color="blue")
         ax.plot(freqs[idx], ps[0,:,dim], label=f'Generated (Dim {dim + 1})', linestyle="--", color="red")
@@ -160,7 +162,7 @@ def analyze_generated_trajectories(model_name,data_validation_path):
     plt.close()
 
     ps_error = power_spectrum_error(generated_trajectory, test_trajectory.unsqueeze(0))
-    print(ps_error)
+    print(f"The power spectrum error amoounta to; {ps_error}")
 
 
 
